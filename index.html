@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Habit Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+background:linear-gradient(135deg,#1e1e2f,#2c3e50);
+font-family:Arial;
+color:white;
+padding:20px;
+}
+
+h2{
+text-align:center;
+margin-bottom:20px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+background:#2a2a3d;
+border-radius:10px;
+overflow:hidden;
+}
+
+th{
+background:#4a6cff;
+color:white;
+padding:8px;
+}
+
+td{
+border:1px solid #444;
+padding:6px;
+text-align:center;
+}
+
+.habit{
+text-align:left;
+padding-left:10px;
+font-weight:bold;
+color:#ffd166;
+}
+
+.box{
+width:18px;
+height:18px;
+border-radius:4px;
+border:1px solid #666;
+cursor:pointer;
+background:#3a3a50;
+transition:0.2s;
+}
+
+.box:hover{
+transform:scale(1.2);
+}
+
+.done{
+background:#00d4ff;
+box-shadow:0 0 6px #00d4ff;
+}
+
+.percent{
+font-weight:bold;
+color:#06d6a0;
+}
+
+.chart-container{
+margin-top:40px;
+background:#2a2a3d;
+padding:20px;
+border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🌟 Monthly Habit Tracker</h2>
+
+<table id="habitTable">
+<tr>
+<th>Habit</th>
+
+<script>
+for(let i=1;i<=30;i++){
+document.write("<th>"+i+"</th>")
+}
+</script>
+
+<th>%</th>
+</tr>
+</table>
+
+<div class="chart-container">
+<canvas id="chart"></canvas>
+</div>
+
+<script>
+
+let habits=[
+"sleep>8hr",
+"skill development>1.5hr",
+"Study>1.5hr",
+"no porn",
+"instagram<30min",
+"chess>30min",
+"Drawing",
+"ScreenTime<2hr"
+]
+
+// Load saved data
+let savedData = localStorage.getItem("habitData")
+
+let data = savedData ? JSON.parse(savedData) : habits.map(()=>Array(30).fill(0))
+
+let table=document.getElementById("habitTable")
+
+habits.forEach((habit,hIndex)=>{
+
+let row=document.createElement("tr")
+
+let name=document.createElement("td")
+name.className="habit"
+name.innerText=habit
+row.appendChild(name)
+
+for(let d=0;d<30;d++){
+
+let cell=document.createElement("td")
+
+let box=document.createElement("div")
+box.className="box"
+
+// Load saved UI state
+if(data[hIndex][d]===1){
+box.classList.add("done")
+}
+
+box.onclick=function(){
+
+box.classList.toggle("done")
+
+data[hIndex][d]=box.classList.contains("done")?1:0
+
+// Save data
+localStorage.setItem("habitData", JSON.stringify(data))
+
+updateChart()
+
+}
+
+cell.appendChild(box)
+row.appendChild(cell)
+
+}
+
+let percent=document.createElement("td")
+percent.className="percent"
+percent.id="p"+hIndex
+percent.innerText="0%"
+row.appendChild(percent)
+
+table.appendChild(row)
+
+})
+
+// Graph
+const ctx=document.getElementById("chart")
+
+const chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:[...Array(30).keys()].map(i=>"Day "+(i+1)),
+datasets:[{
+label:"Habit Completion %",
+data:Array(30).fill(0),
+borderColor:"#00d4ff",
+borderWidth:3,
+tension:0.4,
+fill:false,
+
+pointRadius:0,
+pointHoverRadius:0
+
+}]
+},
+options:{
+plugins:{
+legend:{
+labels:{color:"white"}
+}
+},
+scales:{
+x:{
+ticks:{color:"white"},
+title:{display:true,text:"Days",color:"white"}
+},
+y:{
+ticks:{color:"white"},
+title:{display:true,text:"Completion %",color:"white"},
+min:0,
+max:100
+}
+}
+}
+})
+
+function updateChart(){
+
+let daily=[]
+
+for(let d=0;d<30;d++){
+
+let sum=0
+
+for(let h=0;h<habits.length;h++){
+sum+=data[h][d]
+}
+
+daily[d]=(sum/habits.length)*100
+
+}
+
+chart.data.datasets[0].data=daily
+chart.update()
+
+for(let h=0;h<habits.length;h++){
+
+let total=data[h].reduce((a,b)=>a+b)
+
+let percent=Math.round((total/30)*100)
+
+document.getElementById("p"+h).innerText=percent+"%"
+
+}
+
+}
+
+// Load chart on start
+updateChart()
+
+</script>
+
+</body>
+</html>
